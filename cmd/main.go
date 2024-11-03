@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/alecthomas/kingpin/v2"
 	gtfs "github.com/brietaylor/online-bus-tracker/proto"
 	"google.golang.org/protobuf/proto"
 )
@@ -139,7 +140,13 @@ func (h *handler) handleGetVehicles(w http.ResponseWriter, r *http.Request) {
 	w.Write(respBody)
 }
 
+var (
+	listenAddr = kingpin.Flag("listen", "").Default("localhost:8080").String()
+)
+
 func main() {
+	kingpin.Parse()
+
 	routes, err := readRoutes("gtfs-static/translink-2024-11-01/")
 	if err != nil {
 		log.Fatalf("Failed to read routes: %s", err)
@@ -150,9 +157,8 @@ func main() {
 	}
 	http.HandleFunc("/getVehicles", h.handleGetVehicles)
 
-	listenAddr := "localhost:8080"
-	log.Printf("Listening on %s", listenAddr)
-	if err := http.ListenAndServe(listenAddr, nil); err != nil {
+	log.Printf("Listening on %s", *listenAddr)
+	if err := http.ListenAndServe(*listenAddr, nil); err != nil {
 		log.Fatalf("Failed to start http server: %s", err)
 	}
 }
