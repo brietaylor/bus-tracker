@@ -69,6 +69,13 @@ func (h *handler) handleGetVehicles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	query, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		h.handleError(w, r, err)
+		return
+	}
+	routeSelection := query.Get("route")
+
 	type vehicle struct {
 		Lat            float64 `json:"lat"`
 		Lon            float64 `json:"lon"`
@@ -94,6 +101,10 @@ func (h *handler) handleGetVehicles(w http.ResponseWriter, r *http.Request) {
 				fmt.Errorf("couldn't find matching route for route id %s",
 					routeId))
 			return
+		}
+
+		if routeSelection != "" && route.RouteShortName != routeSelection {
+			continue
 		}
 
 		// Find the direction name
