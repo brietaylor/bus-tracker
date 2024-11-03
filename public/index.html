@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Brie's Bus Tracker</title>
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+    <style>
+        #map { height: 600px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        var map = L.map('map').setView([49.254137, -123.114853], 12);
+
+        // Setting up the base tiles
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Adding the vehicle data to the map
+        url = "http://localhost:8080/getVehicles"
+        bus_data = fetch(url, {
+            method: "GET" // default, so we can ignore
+        })
+        .then((response) => response.json())
+        .then(
+            (bus_data) => {
+                console.log(bus_data);
+                
+                bus_data["vehicles"].forEach(vehicle => {
+                    marker = L.marker([vehicle["lat"], vehicle["lon"]]).addTo(map);
+                    marker_text = `<b>${vehicle["route_short_name"]} ${vehicle["route_long_name"]}</b><br />
+                    Direction: ${vehicle["direction"]}`
+                    marker.bindPopup(marker_text).openPopup();
+                });
+            }
+        );
+    </script>
+</body>
+
+
+
+</html>
