@@ -10,12 +10,28 @@
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
     <style>
-        #map { height: 600px; }
+        #map { height: 100vh; }
+        .route_picker {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        .route_picker h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script>
+        api = "http://localhost:8080"
+        //api = "https://westcoastbrie.com/bus-tracker/api"
+        default_route_selected = '020'
+
         var map = L.map('map').setView([49.254137, -123.114853], 12);
 
         // Setting up the base tiles
@@ -24,9 +40,49 @@
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
-        // Adding the vehicle data to the map
-        url = "http://localhost:8080/getVehicles?route=020"
-        bus_data = fetch(url, {
+        // Adding the route picker
+        routes = fetch(api + "/getRoutes", {
+            method: "GET"
+        })
+        .then((response) => response.json())
+        .then((routes) => {
+            console.log(routes);
+
+            var route_picker = L.control();
+
+            route_picker.onAdd = function (map) {
+                this._div = L.DomUtil.create('div', 'route_picker'); // create a div with a class "route_picker"
+
+                options = ''
+                routes.forEach((r) => {
+                    if (r["short_name"] == default_route_selected) {
+                        options += `<option value=${r["short_name"]} selected="selected">${r["short_name"]} ${r["long_name"]}</option>\n`
+                    } else {
+                        options += `<option value=${r["short_name"]}>${r["short_name"]} ${r["long_name"]}</option>\n`
+                    }
+                });
+
+                header = '<h4>Select a route</h4>';
+                this._div.innerHTML = `
+                    ${header}
+                    <select name="routes" id="route_picker_select">
+                    ${options}
+                    </select>`;
+
+                this._div.addEventListener('change', function(e) {
+                    if (e.target.id == 'route_picker_select') {
+                        console.log(e.target.selectedOptions[0].value);
+                    }
+                });
+
+                return this._div;
+            };
+
+            route_picker.addTo(map);
+        });
+
+        route_short_name = '020';
+        bus_data = fetch(api + `/getVehicles?route=${route_short_name}`, {
             method: "GET" // default, so we can ignore
         })
         .then((response) => response.json())
