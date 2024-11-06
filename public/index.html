@@ -30,7 +30,7 @@
     <script>
         api = "http://localhost:8080"
         //api = "https://westcoastbrie.com/bus-tracker/api"
-        default_route_selected = '020'
+        default_route_selected = '020';
 
         var map = L.map('map').setView([49.254137, -123.114853], 12);
 
@@ -39,6 +39,35 @@
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
+
+        // Layer for the vehicle markers
+        vehicle_markers = new L.LayerGroup();
+        vehicle_markers.addTo(map);
+
+        vehicle_markers.update = function(route_short_name) {
+            this.clearLayers()
+
+            bus_data = fetch(api + `/getVehicles?route=${route_short_name}`, {
+                method: "GET" // default, so we can ignore
+            })
+            .then((response) => response.json())
+            .then(
+                (bus_data) => {
+                    console.log(bus_data);
+
+                    bus_data["vehicles"].forEach(vehicle => {
+                        marker = L.marker([vehicle["lat"], vehicle["lon"]]);
+                        marker_text = `<b>${vehicle["route_short_name"]} ${vehicle["route_long_name"]}</b><br />
+                        Direction: ${vehicle["direction"]}`
+                        marker.bindPopup(marker_text).openPopup();
+
+                        this.addLayer(marker);
+                    });
+                }
+            );
+        }
+
+        vehicle_markers.update(default_route_selected);
 
         // Adding the route picker
         routes = fetch(api + "/getRoutes", {
@@ -71,7 +100,9 @@
 
                 this._div.addEventListener('change', function(e) {
                     if (e.target.id == 'route_picker_select') {
-                        console.log(e.target.selectedOptions[0].value);
+                        route_short_name = e.target.selectedOptions[0].value;
+                        console.log(route_short_name);
+                        vehicle_markers.update(route_short_name);
                     }
                 });
 
@@ -81,23 +112,6 @@
             route_picker.addTo(map);
         });
 
-        route_short_name = '020';
-        bus_data = fetch(api + `/getVehicles?route=${route_short_name}`, {
-            method: "GET" // default, so we can ignore
-        })
-        .then((response) => response.json())
-        .then(
-            (bus_data) => {
-                console.log(bus_data);
-                
-                bus_data["vehicles"].forEach(vehicle => {
-                    marker = L.marker([vehicle["lat"], vehicle["lon"]]).addTo(map);
-                    marker_text = `<b>${vehicle["route_short_name"]} ${vehicle["route_long_name"]}</b><br />
-                    Direction: ${vehicle["direction"]}`
-                    marker.bindPopup(marker_text).openPopup();
-                });
-            }
-        );
     </script>
 </body>
 
