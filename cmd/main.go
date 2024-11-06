@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 
 	"github.com/alecthomas/kingpin/v2"
 	gtfs "github.com/brietaylor/online-bus-tracker/proto"
@@ -61,6 +63,36 @@ func (h *handler) handleError(w http.ResponseWriter, r *http.Request, err error)
 
 	w.WriteHeader(500)
 	io.WriteString(w, "Internal server error")
+}
+
+func (h *handler) handleGetRoutes(w http.ResponseWriter, r *http.Request) {
+	type respRoute struct {
+		ShortName string `json:"short_name"`
+		LongName  string `json:"long_name"`
+	}
+
+	routes := make([]respRoute, 0, len(h.routes))
+	for _, route := range h.routes {
+		routes = append(routes, respRoute{
+			ShortName: route.RouteShortName,
+			LongName:  route.RouteLongName,
+		})
+	}
+
+	slices.SortFunc(routes, func(a, b respRoute) int {
+		return strings.Compare(a.ShortName, b.ShortName)
+	})
+
+	respBody, err := json.Marshal(routes)
+	if err != nil {
+		h.handleError(w, r, err)
+		return
+	}
+
+	w.Header().Add("content-type", "application/json")
+	w.Header().Add("access-control-allow-origin", "*")
+	w.WriteHeader(200)
+	w.Write(respBody)
 }
 
 func (h *handler) handleGetVehicles(w http.ResponseWriter, r *http.Request) {
@@ -156,6 +188,7 @@ func main() {
 		routes: routes,
 	}
 	http.HandleFunc("/getVehicles", h.handleGetVehicles)
+	http.HandleFunc("/getRoutes", h.handleGetRoutes)
 
 	log.Printf("Listening on %s", *listenAddr)
 	if err := http.ListenAndServe(*listenAddr, nil); err != nil {
