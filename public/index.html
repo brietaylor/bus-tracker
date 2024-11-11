@@ -22,6 +22,11 @@
         .route_picker h4 {
             margin: 0 0 5px;
             color: #777;
+            float: left;
+        }
+        .route_picker img {
+            float: right;
+            padding: 6px 8px;
         }
     </style>
 </head>
@@ -44,10 +49,9 @@
         vehicle_markers = new L.LayerGroup();
         vehicle_markers.addTo(map);
 
-        vehicle_markers.update = function(route_short_name) {
+        vehicle_markers.refresh = function() {
             this.clearLayers()
-
-            bus_data = fetch(api + `/getVehicles?route=${route_short_name}`, {
+            bus_data = fetch(api + `/getVehicles?route=${this.current_route_name}`, {
                 method: "GET" // default, so we can ignore
             })
             .then((response) => response.json())
@@ -65,6 +69,11 @@
                     });
                 }
             );
+        }
+
+        vehicle_markers.update = function(route_short_name) {
+            this.current_route_name = route_short_name;
+            this.refresh()
         }
 
         vehicle_markers.update(default_route_selected);
@@ -91,10 +100,10 @@
                     }
                 });
 
-                header = '<h4>Select a route</h4>';
+                header = '<h4>Select a route</h4><img src="static/iconoir/refresh-circle.svg" alt="Refresh" class="refresh" id="refresh" onclick="vehicle_markers.refresh()"/>';
                 this._div.innerHTML = `
                     ${header}
-                    <select name="routes" id="route_picker_select">
+                    <br /><select name="routes" id="route_picker_select">
                     ${options}
                     </select>`;
 
