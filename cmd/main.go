@@ -127,13 +127,13 @@ func (h *handler) handleGetVehicles(w http.ResponseWriter, r *http.Request) {
 	for _, entity := range liveData.Entity {
 		routeId := *entity.Vehicle.Trip.RouteId
 
-		// Find the route name
+		// Find the route name by picking the route ID from the static data.
 		route, ok := h.routes[routeId]
 		if !ok {
-			h.handleError(w, r,
-				fmt.Errorf("couldn't find matching route for route id %s",
-					routeId))
-			return
+			// There's no matching route between the live and static data.
+			// Probably Translink has added a new route and we need to update
+			// the static data.  For now let's ignore it.
+			continue
 		}
 
 		if routeSelection != "" && route.RouteShortName != routeSelection {
