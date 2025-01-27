@@ -12,7 +12,14 @@
     <!-- Meta tag to avoid scaling on mobile -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <style>
-        #map { height: 100vh; }
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        html, body, #map {
+            height: 100vh;
+            width: 100vw;
+        }
         .route_picker {
             padding: 6px 8px;
             font: 14px/16px Arial, Helvetica, sans-serif;
