@@ -20,10 +20,17 @@
             height: 100vh;
             width: 100vw;
         }
+        .bus-icon {
+            background: hsl(0, 0%, 90%);
+            border-radius: 5px;
+            border-color: #00f;
+            border-style: solid;
+            border-width: 1px;
+            border-spacing: 3px;
+        }
         .route_picker {
             padding: 6px 8px;
             font: 14px/16px Arial, Helvetica, sans-serif;
-            background: white;
             background: rgba(255,255,255,0.8);
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
             border-radius: 5px;
@@ -34,12 +41,22 @@
         }
         .route_picker h4 {
             margin: 0 0 5px;
-            color: #777;
+            color: hsl(0, 0%, 15%);
             float: left;
         }
         .route_picker img {
             float: right;
             padding: 6px 8px;
+        }
+        .gps-button {
+            background: #ffffff;
+            width: 30px;
+        }
+        .gps-button img {
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+            padding: 3px;
         }
     </style>
 </head>
@@ -58,6 +75,13 @@
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
+        // Icon for the buses
+        const bus_icon = L.icon({
+            iconUrl: 'static/iconoir/bus-blue.svg',
+            iconSize: [20, 20],
+            className: 'bus-icon',
+        });
+
         // Layer for the vehicle markers
         vehicle_markers = new L.LayerGroup();
         vehicle_markers.addTo(map);
@@ -73,7 +97,7 @@
                     console.log(bus_data);
 
                     bus_data["vehicles"].forEach(vehicle => {
-                        marker = L.marker([vehicle["lat"], vehicle["lon"]]);
+                        marker = L.marker([vehicle["lat"], vehicle["lon"]], {icon: bus_icon});
                         marker_text = `<b>${vehicle["route_short_name"]} ${vehicle["route_long_name"]}</b><br />
                         Direction: ${vehicle["direction"]}`
                         marker.bindPopup(marker_text).openPopup();
@@ -92,7 +116,7 @@
         vehicle_markers.update(default_route_selected);
 
         // Adding the route picker
-        routes = fetch(api + "/getRoutes", {
+        fetch(api + "/getRoutes", {
             method: "GET"
         })
         .then((response) => response.json())
@@ -134,6 +158,47 @@
             route_picker.addTo(map);
         });
 
+        // Layer for the location marker
+
+        // Layer for the GPS button and location
+        L.Control.GpsButton = L.Control.extend({
+            onLocationFound: function(e) {
+                console.log(this.marker);
+                if (this.marker == null || this.circle == null) {
+                    this.marker = new L.marker(e.latlng);
+                    this.marker.addTo(map);
+
+                    this.circle = new L.circle(e.latlng, {radius: e.accuracy})
+                    this.circle.addTo(map);
+                } else {
+                    this.marker.setLatLng(e.latlng);
+                    this.circle.setLatLng(e.latlng);
+                    this.circle.setRadius(e.accuracy);
+                }
+            },
+            onClick: function(e) {
+                map.locate({setView: true, maxZoom: 16});
+            },
+            onAdd: function(map) {
+                const link = L.DomUtil.create('a', 'gps-button leaflet-touch leaflet-bar');
+                link.innerHTML = '<img src="static/iconoir/map-pin.svg" />';
+                link.href = '#';
+                link.title = 'Center map';
+
+                this.marker = null;
+                this.circle = null;
+
+                L.DomEvent.on(link, 'click', this.onClick);
+                map.on('locationfound', this.onLocationFound);
+
+                return link;
+            },
+        })
+        L.control.gps_button = function(opts) {
+            return new L.Control.GpsButton(opts)
+        }
+
+        L.control.gps_button({position: 'topleft'}).addTo(map);
     </script>
 </body>
 
