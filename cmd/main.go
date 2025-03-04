@@ -17,7 +17,7 @@ import (
 
 const (
 	apiKey     = "***REMOVED***"
-	staticData = "gtfs-static/translink-2024-11-01/"
+	staticData = "gtfs-static/translink-2025-02-28/"
 )
 
 func getLiveData() (*gtfs.FeedMessage, error) {
@@ -179,7 +179,7 @@ var (
 func main() {
 	kingpin.Parse()
 
-	routes, err := readRoutes("gtfs-static/translink-2024-11-01/")
+	routes, err := readRoutes(staticData)
 	if err != nil {
 		log.Fatalf("Failed to read routes: %s", err)
 	}
