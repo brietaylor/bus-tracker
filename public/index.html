@@ -20,13 +20,11 @@
             height: 100vh;
             width: 100vw;
         }
-        .bus-icon {
-            background: hsl(0, 0%, 90%);
-            border-radius: 5px;
-            border-color: #00f;
-            border-style: solid;
-            border-width: 1px;
-            border-spacing: 3px;
+        .bus-icon-border {
+            position: absolute;
+        }
+        .bus-icon-bus {
+            position: absolute;
         }
         .route_picker {
             padding: 6px 8px;
@@ -76,11 +74,26 @@
         }).addTo(map);
 
         // Icon for the buses
-        const bus_icon = L.icon({
-            iconUrl: 'static/iconoir/bus-blue.svg',
-            iconSize: [20, 20],
-            className: 'bus-icon',
-        });
+        function getBusIcon(direction) {
+            rotation = {
+                "NORTH": "0deg",
+                "EAST": "90deg",
+                "SOUTH": "180deg",
+                "WEST": "270deg"
+            }[direction]
+
+            if (!rotation) {
+                console.log(`Unknown direction ${direction}`);
+                return
+            }
+
+            return L.divIcon({
+                html: `
+                    <img src="static/bus-icon_border.svg" class="bus-icon-border" style="rotate: ${rotation}"/>
+                    <img src="static/bus-icon_bus.svg" class="bus-icon-bus" />`,
+                className: ''
+            });
+        }
 
         // Layer for the vehicle markers
         vehicle_markers = new L.LayerGroup();
@@ -97,6 +110,10 @@
                     console.log(bus_data);
 
                     bus_data["vehicles"].forEach(vehicle => {
+                        bus_icon = getBusIcon(vehicle["direction"])
+                        if (!bus_icon) {
+                            return;
+                        }
                         marker = L.marker([vehicle["lat"], vehicle["lon"]], {icon: bus_icon});
                         marker_text = `<b>${vehicle["route_short_name"]} ${vehicle["route_long_name"]}</b><br />
                         Direction: ${vehicle["direction"]}`
