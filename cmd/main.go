@@ -16,13 +16,17 @@ import (
 )
 
 const (
-	apiKey     = "***REMOVED***"
 	staticData = "gtfs-static/translink-2025-02-28/"
+)
+
+var (
+	translinkApiKey = kingpin.Flag("apikey", "").Required().Envar("TRANSLINK_API_KEY").String()
+	listenAddr      = kingpin.Flag("listen", "").Default("localhost:8080").String()
 )
 
 func getLiveData() (*gtfs.FeedMessage, error) {
 	v := url.Values{}
-	v.Add("apikey", apiKey)
+	v.Add("apikey", *translinkApiKey)
 	url := url.URL{
 		Scheme:   "https",
 		Host:     "gtfsapi.translink.ca",
@@ -171,10 +175,6 @@ func (h *handler) handleGetVehicles(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write(respBody)
 }
-
-var (
-	listenAddr = kingpin.Flag("listen", "").Default("localhost:8080").String()
-)
 
 func main() {
 	kingpin.Parse()
